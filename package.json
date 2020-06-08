@@ -1,0 +1,31 @@
+{
+  "name": "PROYECT_NAME",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "start": "tsc && node ./dist/index.js",
+    "build": "tsc",
+    "pre-publish": "node prepublish.js",
+    "publish:lib": "npm run build && npm run pre-publish && npm publish dist/ --access=public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Binarysearch/REPOSITORY_NAME.git"
+  },
+  "author": "Antonio Ruiz Gutierrez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Binarysearch/REPOSITORY_NAME/issues"
+  },
+  "homepage": "https://github.com/Binarysearch/REPOSITORY_NAME#readme",
+  "devDependencies": {
+    "@types/node": "~8.9.4",
+    "ts-loader": "^7.0.0"
+  },
+  "dependencies": {
+    "@types/node": "^13.13.5",
+    "typescript": "^3.8.3"
+  }
+}
