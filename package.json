@@ -1,5 +1,5 @@
 {
-  "name": "PROYECT_NAME",
+  "name": "gv-server-civilizations",
   "version": "0.0.1",
   "description": "",
   "main": "./dist/index.js",
@@ -12,20 +12,27 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Binarysearch/REPOSITORY_NAME.git"
+    "url": "git+https://github.com/Binarysearch/gv-server-civilizations.git"
   },
   "author": "Antonio Ruiz Gutierrez",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Binarysearch/REPOSITORY_NAME/issues"
+    "url": "https://github.com/Binarysearch/gv-server-civilizations/issues"
   },
-  "homepage": "https://github.com/Binarysearch/REPOSITORY_NAME#readme",
+  "homepage": "https://github.com/Binarysearch/gv-server-civilizations#readme",
   "devDependencies": {
     "@types/node": "~8.9.4",
     "ts-loader": "^7.0.0"
   },
   "dependencies": {
+    "@piros/ioc": "0.0.5",
+    "@piros/status": "0.0.4",
+    "@piros/tssf": "0.0.19",
     "@types/node": "^13.13.5",
-    "typescript": "^3.8.3"
+    "@types/pg": "^7.14.3",
+    "pg": "^8.2.1",
+    "rxjs": "^6.5.5",
+    "typescript": "^3.8.3",
+    "uuid": "^8.1.0"
   }
 }
