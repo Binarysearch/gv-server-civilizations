@@ -7,6 +7,7 @@ import { AplicationStatusService, DefaultStatusProvider, ReplicaStatus } from '@
 
 
 import { DatabaseService } from '@piros/gv-server-commons';
+import { CivilizationsController } from './controller/civilizations-controller';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
@@ -41,6 +42,13 @@ CREATE TABLE sessions(
     "user" text
 );
 
+DROP TABLE IF EXISTS civilizations;
+CREATE TABLE civilizations(
+    id text PRIMARY KEY,
+    "user" text,
+    name text
+);
+
 `, []).subscribe(()=>{
     injector.setProviders([
         { provide: WsAuthService, useClass: LocalAuthService },
@@ -50,7 +58,8 @@ CREATE TABLE sessions(
     
     new Application({
         controllers: [
-            UsersController
+            UsersController,
+            CivilizationsController
         ],
         channels: [ ]
     }, injector).start(<any>process.env.LISTEN_PORT);

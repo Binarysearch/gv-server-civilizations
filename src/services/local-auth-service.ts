@@ -1,10 +1,11 @@
 import { Injectable } from "@piros/ioc";
-import { WsAuthService, Session } from "@piros/tssf";
-import { Observable, of, throwError } from 'rxjs';
+import { WsAuthService } from "@piros/tssf";
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as uuid from 'uuid';
 import { UsersDao } from "../dao/users-dao";
 import { SessionsDao } from "../dao/sessions-dao";
+import { Session } from "./session";
 
 @Injectable
 export class LocalAuthService extends WsAuthService {
