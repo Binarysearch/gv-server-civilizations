@@ -1,7 +1,7 @@
 
 import { Injectable } from "@piros/ioc";
 import { Observable } from "rxjs";
-import { DatabaseService } from "./database-service";
+import { DatabaseService } from "@piros/gv-server-commons";
 
 @Injectable
 export class SessionsDao {

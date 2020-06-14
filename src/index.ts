@@ -6,7 +6,7 @@ import { Injector } from '@piros/ioc';
 import { AplicationStatusService, DefaultStatusProvider, ReplicaStatus } from '@piros/status';
 
 
-import { DatabaseService } from './dao/database-service';
+import { DatabaseService } from '@piros/gv-server-commons';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
