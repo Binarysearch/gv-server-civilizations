@@ -8,6 +8,8 @@ import { AplicationStatusService, DefaultStatusProvider, ReplicaStatus } from '@
 
 import { DatabaseService } from '@piros/gv-server-commons';
 import { CivilizationsController } from './controller/civilizations-controller';
+import { StarsController } from './controller/stars-controller';
+import { CREATE_CIVILIZATION_CHANNEL } from './channels';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
@@ -49,6 +51,15 @@ CREATE TABLE civilizations(
     name text
 );
 
+DROP TABLE IF EXISTS stars;
+CREATE TABLE stars(
+    id text PRIMARY KEY,
+    name text,
+    x real,
+    y real,
+    type integer,
+    size integer
+);
 `, []).subscribe(()=>{
     injector.setProviders([
         { provide: WsAuthService, useClass: LocalAuthService },
@@ -59,9 +70,12 @@ CREATE TABLE civilizations(
     new Application({
         controllers: [
             UsersController,
-            CivilizationsController
+            CivilizationsController,
+            StarsController
         ],
-        channels: [ ]
+        channels: [
+            CREATE_CIVILIZATION_CHANNEL
+        ]
     }, injector).start(<any>process.env.LISTEN_PORT);
 
     const statusService = injector.resolve(AplicationStatusService);

@@ -27,7 +27,7 @@
   "dependencies": {
     "@piros/ioc": "0.0.5",
     "@piros/status": "0.0.4",
-    "@piros/tssf": "0.0.19",
+    "@piros/tssf": "0.0.22",
     "@piros/gv-server-commons": "0.0.1",
     "@types/node": "^13.13.5",
     "@types/pg": "^7.14.3",
