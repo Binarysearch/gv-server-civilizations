@@ -18,7 +18,8 @@ export class CivilizationsDao {
             SELECT
                 id,
                 "user",
-                name
+                name,
+                homeworld
             FROM
                 civilizations
             WHERE 
@@ -28,8 +29,8 @@ export class CivilizationsDao {
 
     public createCivilization(c: Civilization): Observable<void> {
         return this.ds.execute(`
-        INSERT INTO civilizations(id, "user", name) 
-        VALUES ($1, $2, $3)
-        `,[ c.id, c.user, c.name ]);
+        INSERT INTO civilizations(id, "user", name, homeworld) 
+        VALUES ($1, $2, $3, $4)
+        `,[ c.id, c.user, c.name, c.homeworld ]);
     }
 }

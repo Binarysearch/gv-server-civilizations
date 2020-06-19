@@ -5,11 +5,15 @@ import { UsersController } from './controller/users-controller';
 import { Injector } from '@piros/ioc';
 import { AplicationStatusService, DefaultStatusProvider, ReplicaStatus } from '@piros/status';
 
+import * as uuid from "uuid";
 
 import { DatabaseService } from '@piros/gv-server-commons';
 import { CivilizationsController } from './controller/civilizations-controller';
 import { StarsController } from './controller/stars-controller';
 import { CREATE_CIVILIZATION_CHANNEL } from './channels';
+import { PlanetsController } from './controller/planets-controller';
+import { StarsDao } from './dao/stars-dao';
+import { Star } from './model/star';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
@@ -48,7 +52,8 @@ DROP TABLE IF EXISTS civilizations;
 CREATE TABLE civilizations(
     id text PRIMARY KEY,
     "user" text,
-    name text
+    name text,
+    homeworld text
 );
 
 DROP TABLE IF EXISTS stars;
@@ -58,7 +63,17 @@ CREATE TABLE stars(
     x real,
     y real,
     type integer,
-    size integer
+    size integer,
+    explored boolean
+);
+
+DROP TABLE IF EXISTS planets;
+CREATE TABLE planets(
+    id text PRIMARY KEY,
+    star_system text,
+    type integer,
+    size integer,
+    orbit integer
 );
 `, []).subscribe(()=>{
     injector.setProviders([
@@ -67,11 +82,34 @@ CREATE TABLE stars(
         { provide: DefaultStatusProvider, useClass: MyStatusProvider }
     ]);
     
+    const starsDao: StarsDao = injector.resolve(StarsDao);
+
+    const stars: Star[] = [];
+    const galaxyWidth = 30000;
+    const galaxyHeight = 30000;
+
+    for (let i = 0; i < 1000; i++) {
+        const star = {
+            id: uuid.v4(),
+            name: 'name',
+            x: galaxyWidth * Math.random() * Math.cos(i),
+            y: galaxyHeight * Math.random() * Math.sin(i),
+            type: 1,
+            size: 1
+        };
+        stars.push(star);
+    }
+
+    starsDao.saveStars(stars).subscribe(()=>{
+        console.log('Stars created');
+    });
+
     new Application({
         controllers: [
             UsersController,
             CivilizationsController,
-            StarsController
+            StarsController,
+            PlanetsController,
         ],
         channels: [
             CREATE_CIVILIZATION_CHANNEL

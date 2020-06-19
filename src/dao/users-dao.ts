@@ -11,7 +11,7 @@ export class UsersDao {
     ) {
         this.saveUser({
             id: 'admin_id',
-            username: 'admin',
+            username: 'admin@galaxyvictor.com',
             password: '12345'
         }).subscribe();
     }
