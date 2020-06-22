@@ -14,6 +14,7 @@ import { CREATE_CIVILIZATION_CHANNEL } from './channels';
 import { PlanetsController } from './controller/planets-controller';
 import { StarsDao } from './dao/stars-dao';
 import { Star } from './model/star';
+import { FleetsController } from './controller/fleets-controller';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
@@ -82,6 +83,25 @@ CREATE TABLE planets(
     size integer,
     orbit integer
 );
+
+DROP TABLE IF EXISTS visible_stars;
+CREATE TABLE visible_stars(
+    star text,
+    civilization text,
+    PRIMARY KEY(star, civilization) 
+);
+
+DROP TABLE IF EXISTS fleets;
+CREATE TABLE fleets(
+    id text PRIMARY KEY,
+    civilization text,
+    origin text,
+    destination text,
+    start_travel_time bigint,
+    speed real,
+    seed real,
+    ship_count integer
+);
 `, []).subscribe(()=>{
     injector.setProviders([
         { provide: WsAuthService, useClass: LocalAuthService },
@@ -117,6 +137,7 @@ CREATE TABLE planets(
             CivilizationsController,
             StarsController,
             PlanetsController,
+            FleetsController,
         ],
         channels: [
             CREATE_CIVILIZATION_CHANNEL

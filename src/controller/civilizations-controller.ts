@@ -10,6 +10,8 @@ import { UserNotificationService } from "../services/user-notification-service";
 import { StarsDao } from "../dao/stars-dao";
 import { PlanetsDao } from "../dao/planets-dao";
 import { Planet } from "../model/planet";
+import { Fleet } from "../model/fleet";
+import { FleetsDao } from "../dao/fleets-dao";
 
 @Controller
 export class CivilizationsController {
@@ -18,6 +20,7 @@ export class CivilizationsController {
         private civilizationsDao: CivilizationsDao,
         private starsDao: StarsDao,
         private planetsDao: PlanetsDao,
+        private fleetsDao: FleetsDao,
         private userNotificationService: UserNotificationService
     ) { }
 
@@ -39,6 +42,7 @@ export class CivilizationsController {
             this.starsDao.getRandomUnexploredStar().subscribe(star => {
                 const id = uuid.v4();
                 const homeworld = uuid.v4();
+                const fleetId = uuid.v4();
                 const starId = star.id;
                 const civilization = { id: id, user: session.user.id, name: name, homeworld: homeworld };
                 
@@ -50,11 +54,24 @@ export class CivilizationsController {
                     orbit: 1
                 }];
 
+                const fleets: Fleet[] = [{
+                    id: fleetId,
+                    civilizationId: id,
+                    originId: starId,
+                    destinationId: starId,
+                    startTravelTime: 0,
+                    speed: 1,
+                    seed: 1,
+                    shipCount: 1
+                }];
+
                 forkJoin(
                     this.planetsDao.savePlanets(planets),
+                    this.fleetsDao.saveFleets(fleets),
                     this.civilizationsDao.createCivilization(civilization),
                     this.starsDao.markStarAsExplored(starId),
-                    this.starsDao.saveKnownStars([{ starId: starId, civilizationId: id }])
+                    this.starsDao.saveKnownStars([{ starId: starId, civilizationId: id }]),
+                    this.starsDao.saveVisibleStars([{ starId: starId, civilizationId: id }]),
                 ).subscribe(() => {
                     session.civilizationId = id;
                     this.userNotificationService.sendToUser(session.user.id, CREATE_CIVILIZATION_CHANNEL, civilization)
