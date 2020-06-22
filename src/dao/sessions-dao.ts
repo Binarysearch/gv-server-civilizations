@@ -12,16 +12,17 @@ export class SessionsDao {
         
     }
 
-    public getByToken(authToken: string): Observable<{ authToken: string; userId: string }> {
-        return this.ds.getOne<{ authToken: string; userId: string }>(
+    public getByToken(authToken: string): Observable<{ authToken: string; userId: string, civilizationId: string }> {
+        return this.ds.getOne<{ authToken: string; userId: string, civilizationId: string }>(
             `
             SELECT
-                token as "authToken",
-                "user" as "userId"
+                s.token as "authToken",
+                s."user" as "userId",
+                c.id as "civilizationId"
             FROM
-                sessions
+                sessions s left join civilizations c on c."user" = s."user"
             WHERE 
-                token = $1;
+                s.token = $1;
         `, [ authToken ]);
     }
 

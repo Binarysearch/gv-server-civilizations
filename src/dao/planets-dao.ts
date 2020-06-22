@@ -12,18 +12,19 @@ export class PlanetsDao {
         
     }
 
-    public getPlanets(): Observable<Planet[]> {
+    public getPlanets(civilizationId: string): Observable<Planet[]> {
         return this.ds.getAll<Planet>(
             `
             SELECT
-                id,
-                star_system as "starSystem",
-                type,
-                size,
-                orbit
+                p.id,
+                p.star_system as "starSystem",
+                p.type,
+                p.size,
+                p.orbit
             FROM
-                planets;
-        `, []);
+                planets p
+                join known_stars ks on ks.star = p.star_system and ks.civilization = $1;
+        `, [ civilizationId ]);
     }
 
     public savePlanets(planets: Planet[]): Observable<void> {

@@ -23,7 +23,8 @@ export class LocalAuthService extends WsAuthService {
                 return {
                     id: uuid.v4(),
                     authToken: authToken,
-                    user: { id: session.userId }
+                    user: { id: session.userId },
+                    civilizationId: session.civilizationId
                 }
             })
         );
@@ -38,7 +39,8 @@ export class LocalAuthService extends WsAuthService {
                             obs.next({
                                 id: uuid.v4(),
                                 authToken: authToken,
-                                user: { id: user.id }
+                                user: { id: user.id },
+                                civilizationId: user.civilizationId
                             });
                             obs.complete();
                         }

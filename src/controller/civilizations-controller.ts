@@ -53,9 +53,10 @@ export class CivilizationsController {
                 forkJoin(
                     this.planetsDao.savePlanets(planets),
                     this.civilizationsDao.createCivilization(civilization),
-                    this.starsDao.markStarAsExplored(starId)
+                    this.starsDao.markStarAsExplored(starId),
+                    this.starsDao.saveKnownStars([{ starId: starId, civilizationId: id }])
                 ).subscribe(() => {
-
+                    session.civilizationId = id;
                     this.userNotificationService.sendToUser(session.user.id, CREATE_CIVILIZATION_CHANNEL, civilization)
                     obs.next(id);
                     obs.complete();

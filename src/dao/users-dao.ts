@@ -34,11 +34,12 @@ export class UsersDao {
         return this.ds.getOne<User>(
             `
             SELECT
-                id,
-                username,
-                password
+                u.id,
+                u.username,
+                u.password,
+                c.id as "civilizationId"
             FROM
-                users
+                users u left join civilizations c on c."user" = u.id
             WHERE 
                 username = $1;
         `, [username]);

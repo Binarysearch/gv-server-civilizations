@@ -65,6 +65,21 @@ export class StarsDao {
         return this.ds.execute(insertQuery, []);
     }
 
+    public saveKnownStars(knownStars: { starId: string, civilizationId: string }[]): Observable<void> {
+
+        const values = knownStars.map(s => {
+            return `('${s.starId}', '${s.civilizationId}')`;
+        }).join(',');
+
+        const insertQuery = `
+            INSERT INTO known_stars(
+                star,
+                civilization
+            ) VALUES ${values};
+        `;
+        return this.ds.execute(insertQuery, []);
+    }
+
     public markStarAsExplored(starId: string): Observable<void> {
         return this.ds.execute(`UPDATE stars SET explored = true WHERE id = $1;`, [ starId ]);
     }

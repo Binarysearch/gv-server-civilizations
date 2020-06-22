@@ -67,6 +67,13 @@ CREATE TABLE stars(
     explored boolean
 );
 
+DROP TABLE IF EXISTS known_stars;
+CREATE TABLE known_stars(
+    star text,
+    civilization text,
+    PRIMARY KEY(star, civilization) 
+);
+
 DROP TABLE IF EXISTS planets;
 CREATE TABLE planets(
     id text PRIMARY KEY,
