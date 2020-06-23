@@ -12,6 +12,25 @@ export class FleetsDao {
         
     }
 
+    public getFleetById(fleetId: string): Observable<Fleet> {
+        return this.ds.getOne<Fleet>(
+            `
+            SELECT
+                f.id,
+                f.civilization as "civilizationId",
+                f.origin as "originId",
+                f.destination as "destinationId",
+                f.start_travel_time as "startTravelTime",
+                f.speed,
+                f.seed,
+                f.ship_count as "shipCount"
+            FROM
+                fleets f
+            WHERE 
+                id = $1;
+        `, [ fleetId ]);
+    }
+
     public getFleets(civilizationId: string): Observable<Fleet[]> {
         return this.ds.getAll<Fleet>(
             `
@@ -49,6 +68,22 @@ export class FleetsDao {
             ) VALUES ${values};
         `;
         return this.ds.execute(insertQuery, []);
+    }
+
+    public updateFleet(f: Fleet): Observable<void> {
+        const updateQuery = `
+            UPDATE fleets SET
+                civilization = $1,
+                origin = $2,
+                destination = $3,
+                start_travel_time = $4,
+                speed = $5,
+                seed = $6,
+                ship_count = $7
+            WHERE
+                id = $8;
+        `;
+        return this.ds.execute(updateQuery, [ f.civilizationId, f.originId, f.destinationId, f.startTravelTime, f.speed, f.seed, f.shipCount, f.id ]);
     }
     
 }

@@ -12,6 +12,23 @@ export class StarsDao {
         
     }
 
+    public getStarsByIds(starIds: string[]): Observable<Star[]> {
+        return this.ds.getAll<Star>(
+            `
+            SELECT
+                id,
+                name,
+                type,
+                size,
+                x,
+                y
+            FROM
+                stars
+            WHERE
+                id IN (${starIds.map((id,i) => `$${i + 1}`)});
+        `, starIds);
+    }
+
     public getStars(): Observable<Star[]> {
         return this.ds.getAll<Star>(
             `
