@@ -10,7 +10,7 @@ import * as uuid from "uuid";
 import { DatabaseService } from '@piros/gv-server-commons';
 import { CivilizationsController } from './controller/civilizations-controller';
 import { StarsController } from './controller/stars-controller';
-import { CREATE_CIVILIZATION_CHANNEL, START_TRAVEL_NOTIFICATIONS_CHANNEL } from './channels';
+import { CREATE_CIVILIZATION_CHANNEL, START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL } from './channels';
 import { PlanetsController } from './controller/planets-controller';
 import { StarsDao } from './dao/stars-dao';
 import { Star } from './model/star';
@@ -142,6 +142,7 @@ CREATE TABLE fleets(
         channels: [
             CREATE_CIVILIZATION_CHANNEL,
             START_TRAVEL_NOTIFICATIONS_CHANNEL,
+            END_TRAVEL_NOTIFICATIONS_CHANNEL,
         ]
     }, injector).start(<any>process.env.LISTEN_PORT);
 

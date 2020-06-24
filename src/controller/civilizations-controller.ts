@@ -60,7 +60,7 @@ export class CivilizationsController {
                     originId: starId,
                     destinationId: starId,
                     startTravelTime: 0,
-                    speed: 1,
+                    speed: 1000,
                     seed: 1,
                     shipCount: 1
                 }];

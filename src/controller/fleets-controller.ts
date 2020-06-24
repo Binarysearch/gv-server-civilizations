@@ -9,8 +9,9 @@ import { StarsDao } from "../dao/stars-dao";
 import { Fleet } from "../model/fleet";
 import { Star } from "../model/star";
 import { INVALID_TRAVEL_ERROR } from "../interface/errors/errors";
-import { START_TRAVEL_NOTIFICATIONS_CHANNEL } from "../channels";
+import { START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL } from "../channels";
 import { StartTravelNotificationDto } from "../interface/dtos/start-travel-notification-dto";
+import { EndTravelNotificationDto } from "../interface/dtos/end-travel-notification-dto";
 
 @Controller
 export class FleetsController {
@@ -63,7 +64,18 @@ export class FleetsController {
                     this.userNotificationService.sendToUser(session.user.id, START_TRAVEL_NOTIFICATIONS_CHANNEL, startTravelNotification);
 
                     setTimeout(() => {
-                        console.log('END TRAVEL');
+                        const endTravelNotification: EndTravelNotificationDto = {
+                            fleet: {
+                                ...fleet,
+                                originId: dto.destinationStarId,
+                                destinationId: dto.destinationStarId,
+                                startTravelTime: 0
+                            }
+                        };
+                        this.fleetsDao.updateFleet(endTravelNotification.fleet).subscribe(() => {
+                            this.userNotificationService.sendToUser(session.user.id, END_TRAVEL_NOTIFICATIONS_CHANNEL, endTravelNotification);
+                        });
+                        
                     }, travelTime);
                 });
             });
