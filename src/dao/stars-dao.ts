@@ -112,6 +112,17 @@ export class StarsDao {
         return this.ds.execute(insertQuery, []);
     }
 
+    public getViewerUserIdsInStars(starIds: string[]): Observable<{ userId: string }[]> {
+        return this.ds.getAll(`
+        SELECT
+            c."user" as "userId"
+        FROM
+            civilizations c JOIN visible_stars vs ON vs.civilization = c.id
+        WHERE
+            vs.star IN (${starIds.map((id,i) => `$${i + 1}`)});
+        `, starIds);
+    }
+
     public markStarAsExplored(starId: string): Observable<void> {
         return this.ds.execute(`UPDATE stars SET explored = true WHERE id = $1;`, [ starId ]);
     }

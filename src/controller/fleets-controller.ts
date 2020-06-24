@@ -61,7 +61,12 @@ export class FleetsController {
                         fleet: newFleet
                     };
                     
-                    this.userNotificationService.sendToUser(session.user.id, START_TRAVEL_NOTIFICATIONS_CHANNEL, startTravelNotification);
+                    this.starsDao.getViewerUserIdsInStars([dto.originStarId, dto.destinationStarId]).subscribe(users =>{
+                        users.forEach(u => {
+                            this.userNotificationService.sendToUser(u.userId, START_TRAVEL_NOTIFICATIONS_CHANNEL, startTravelNotification);
+                        });
+                    });
+                    
 
                     setTimeout(() => {
                         const endTravelNotification: EndTravelNotificationDto = {
@@ -73,10 +78,17 @@ export class FleetsController {
                             }
                         };
                         this.fleetsDao.updateFleet(endTravelNotification.fleet).subscribe(() => {
-                            this.userNotificationService.sendToUser(session.user.id, END_TRAVEL_NOTIFICATIONS_CHANNEL, endTravelNotification);
+                            this.starsDao.getViewerUserIdsInStars([dto.originStarId, dto.destinationStarId]).subscribe(users =>{
+                                users.forEach(u => {
+                                    this.userNotificationService.sendToUser(u.userId, END_TRAVEL_NOTIFICATIONS_CHANNEL, endTravelNotification);
+                                });
+                            });
                         });
                         
                     }, travelTime);
+
+                    obs.next(true);
+                    obs.complete();
                 });
             });
         });
