@@ -9,9 +9,10 @@ import { StarsDao } from "../dao/stars-dao";
 import { Fleet } from "../model/fleet";
 import { Star } from "../model/star";
 import { INVALID_TRAVEL_ERROR } from "../interface/errors/errors";
-import { START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL } from "../channels";
+import { START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL } from "../channels";
 import { StartTravelNotificationDto } from "../interface/dtos/start-travel-notification-dto";
 import { EndTravelNotificationDto } from "../interface/dtos/end-travel-notification-dto";
+import { DeleteFleetNotificationDto } from "../interface/dtos/delete-fleet-notification-dto";
 
 @Controller
 export class FleetsController {
@@ -60,14 +61,43 @@ export class FleetsController {
                     const startTravelNotification: StartTravelNotificationDto = {
                         fleet: newFleet
                     };
+                    const deleteFleetNotification: DeleteFleetNotificationDto = {
+                        fleetId: newFleet.id
+                    };
                     
-                    this.starsDao.getViewerUserIdsInStars([dto.originStarId, dto.destinationStarId]).subscribe(users =>{
-                        users.forEach(u => {
+                    forkJoin(
+                        this.starsDao.getViewerUserIdsInStars([dto.originStarId]),
+                        this.starsDao.getViewerUserIdsInStars([dto.destinationStarId])
+                    ).subscribe(results => {
+                        const usersPresentInOrigin = results[0];
+                        const civilizationsToSendStartTravel = results[1];
+                        const civilizationsToSendStartTravelSet: Set<string> = new Set();
+
+                        civilizationsToSendStartTravel.forEach(u => {
+                            civilizationsToSendStartTravelSet.add(u.userId);
+                        });
+
+                        if (!civilizationsToSendStartTravelSet.has(session.user.id)) {
+                            civilizationsToSendStartTravel.push({ userId: session.user.id });
+                            civilizationsToSendStartTravelSet.add(session.user.id);
+                        }
+
+                        //Enviar inicio viaje a los usuarios presentes en el sistema destino y al dueño
+                        civilizationsToSendStartTravel.forEach(u => {
+                            civilizationsToSendStartTravelSet.add(u.userId);
                             this.userNotificationService.sendToUser(u.userId, START_TRAVEL_NOTIFICATIONS_CHANNEL, startTravelNotification);
                         });
+
+                        //Enviar borrado flota a los usuarios presentes en el sistema origen que no puedan ver el sistema destino
+                        usersPresentInOrigin
+                            .filter(u => !civilizationsToSendStartTravelSet.has(u.userId))
+                            .forEach(u => {
+                                this.userNotificationService.sendToUser(u.userId, DELETE_FLEET_NOTIFICATIONS_CHANNEL, deleteFleetNotification);
+                            }
+                        );
                     });
                     
-
+                    
                     setTimeout(() => {
                         const endTravelNotification: EndTravelNotificationDto = {
                             fleet: {
@@ -78,11 +108,14 @@ export class FleetsController {
                             }
                         };
                         this.fleetsDao.updateFleet(endTravelNotification.fleet).subscribe(() => {
-                            this.starsDao.getViewerUserIdsInStars([dto.originStarId, dto.destinationStarId]).subscribe(users =>{
+
+                            this.starsDao.getViewerUserIdsInStars([dto.destinationStarId]).subscribe(users =>{
+                                users.push({ userId: session.user.id });
                                 users.forEach(u => {
                                     this.userNotificationService.sendToUser(u.userId, END_TRAVEL_NOTIFICATIONS_CHANNEL, endTravelNotification);
                                 });
                             });
+
                         });
                         
                     }, travelTime);
