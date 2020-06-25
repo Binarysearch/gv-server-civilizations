@@ -2,6 +2,7 @@ import { Injectable } from "@piros/ioc";
 import { Observable } from "rxjs";
 import { Star } from "../model/star";
 import { DatabaseService } from "@piros/gv-server-commons";
+import { map } from "rxjs/operators";
 
 @Injectable
 export class StarsDao {
@@ -107,7 +108,9 @@ export class StarsDao {
             INSERT INTO visible_stars(
                 star,
                 civilization
-            ) VALUES ${values};
+            ) 
+            SELECT * from (VALUES ${values}) x (s, c) WHERE NOT EXISTS(SELECT 1 FROM visible_stars vs WHERE vs.star = s AND vs.civilization = c)
+            ;
         `;
         return this.ds.execute(insertQuery, []);
     }
@@ -121,6 +124,17 @@ export class StarsDao {
         WHERE
             vs.star IN (${starIds.map((id,i) => `$${i + 1}`)});
         `, starIds);
+    }
+
+    public canCivilizationViewStar(civilizationId: string, starId: string): Observable<boolean> {
+        return this.ds.getOne<any>(`
+        SELECT
+            1
+        FROM
+            visible_stars vs
+        WHERE
+            vs.civilization = $1 AND vs.star = $2;
+        `, [ civilizationId, starId ]).pipe(map(r => r !== undefined));
     }
 
     public markStarAsExplored(starId: string): Observable<void> {
