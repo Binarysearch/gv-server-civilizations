@@ -45,7 +45,7 @@ export class FleetsDao {
                 f.ship_count as "shipCount"
             FROM
                 fleets f
-                join visible_stars vs on vs.star = f.destination and vs.civilization = $1;
+                join visible_stars vs on vs.star = f.destination and vs.civilization = $1 AND vs.quantity > 0;
         `, [ civilizationId ]);
     }
 
