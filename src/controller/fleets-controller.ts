@@ -9,11 +9,12 @@ import { StarsDao } from "../dao/stars-dao";
 import { Fleet } from "../model/fleet";
 import { Star } from "../model/star";
 import { INVALID_TRAVEL_ERROR } from "../interface/errors/errors";
-import { START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL } from "../channels";
+import { START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, VISIBILITY_LOST_NOTIFICATIONS_CHANNEL } from "../channels";
 import { StartTravelNotificationDto } from "../interface/dtos/start-travel-notification-dto";
 import { EndTravelNotificationDto } from "../interface/dtos/end-travel-notification-dto";
 import { DeleteFleetNotificationDto } from "../interface/dtos/delete-fleet-notification-dto";
 import { VisibilityGainedNotificationDto } from "../interface/dtos/visibility-gained-notification";
+import { VisibilityLostNotificationDto } from "../interface/dtos/visibility-lost-notidication";
 
 @Controller
 export class FleetsController {
@@ -71,7 +72,8 @@ export class FleetsController {
                         this.starsDao.getViewerUserIdsInStars([dto.destinationStarId])
                     ).subscribe(results => {
                         const usersPresentInOrigin = results[0];
-                        const civilizationsToSendStartTravel = results[1];
+                        const usersPresentInDestination = results[1];
+                        const civilizationsToSendStartTravel = [...usersPresentInDestination];
                         const civilizationsToSendStartTravelSet: Set<string> = new Set();
 
                         civilizationsToSendStartTravel.forEach(u => {
@@ -96,6 +98,21 @@ export class FleetsController {
                                 this.userNotificationService.sendToUser(u.userId, DELETE_FLEET_NOTIFICATIONS_CHANNEL, deleteFleetNotification);
                             }
                         );
+
+                        //Enviar evento perdida de visibilidad cuando se pierda la visibilidad en el sistema origen
+                        this.starsDao.getStarCivilizationVisibility(dto.originStarId, session.civilizationId).subscribe((quantity) => {
+                            this.starsDao.addVisibilityToStar({ starId: dto.originStarId, civilizationId: fleet.civilizationId, quantity: -1 }).subscribe(()=>{
+                                if (quantity === 1) {
+                                    const visibilityLostNotification: VisibilityLostNotificationDto = {
+                                        starId: dto.originStarId
+                                    };
+                                    usersPresentInOrigin.forEach(u => {
+                                        this.userNotificationService.sendToUser(u.userId, VISIBILITY_LOST_NOTIFICATIONS_CHANNEL, visibilityLostNotification);
+                                    });
+                                }
+                            });
+                        });
+                        
                     });
                     
                     
@@ -113,7 +130,7 @@ export class FleetsController {
                         this.starsDao.canCivilizationViewStar(fleet.civilizationId, dto.destinationStarId).subscribe(result =>{
                             if (!result) {
                                 const visibilityGainNotification: VisibilityGainedNotificationDto = {
-                                    starSystem: dto.destinationStarId,
+                                    starId: dto.destinationStarId,
                                     orbitingFleets: [],
                                     incomingFleets: []
                                 };
@@ -122,7 +139,7 @@ export class FleetsController {
                         });
 
                         forkJoin(
-                            this.starsDao.saveVisibleStars([{ starId: dto.destinationStarId, civilizationId: fleet.civilizationId }]),
+                            this.starsDao.addVisibilityToStar({ starId: dto.destinationStarId, civilizationId: fleet.civilizationId, quantity: 1 }),
                             this.fleetsDao.updateFleet(endTravelNotification.fleet)
                         ).subscribe(() => {
 

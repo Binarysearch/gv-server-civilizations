@@ -71,7 +71,7 @@ export class CivilizationsController {
                     this.civilizationsDao.createCivilization(civilization),
                     this.starsDao.markStarAsExplored(starId),
                     this.starsDao.saveKnownStars([{ starId: starId, civilizationId: id }]),
-                    this.starsDao.saveVisibleStars([{ starId: starId, civilizationId: id }]),
+                    this.starsDao.addVisibilityToStar({ starId: starId, civilizationId: id, quantity: 2 }),
                 ).subscribe(() => {
                     session.civilizationId = id;
                     this.userNotificationService.sendToUser(session.user.id, CREATE_CIVILIZATION_CHANNEL, civilization)

@@ -2,7 +2,7 @@ import { FleetInfoDto } from './fleet-info-dto';
 
 export interface VisibilityGainedNotificationDto {
 
-	starSystem: string;
+	starId: string;
     orbitingFleets: FleetInfoDto[];
     incomingFleets: FleetInfoDto[];
 

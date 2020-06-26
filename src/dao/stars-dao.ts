@@ -1,5 +1,5 @@
 import { Injectable } from "@piros/ioc";
-import { Observable } from "rxjs";
+import { Observable, forkJoin } from "rxjs";
 import { Star } from "../model/star";
 import { DatabaseService } from "@piros/gv-server-commons";
 import { map } from "rxjs/operators";
@@ -98,21 +98,18 @@ export class StarsDao {
         return this.ds.execute(insertQuery, []);
     }
 
-    public saveVisibleStars(knownStars: { starId: string, civilizationId: string }[]): Observable<void> {
+    public addVisibilityToStar(vs: { starId: string, civilizationId: string, quantity: number; }): Observable<void> {
 
-        const values = knownStars.map(s => {
-            return `('${s.starId}', '${s.civilizationId}')`;
-        }).join(',');
-
-        const insertQuery = `
-            INSERT INTO visible_stars(
-                star,
-                civilization
-            ) 
-            SELECT * from (VALUES ${values}) x (s, c) WHERE NOT EXISTS(SELECT 1 FROM visible_stars vs WHERE vs.star = s AND vs.civilization = c)
-            ;
+        const query = `
+        UPDATE visible_stars SET quantity = quantity + ${vs.quantity} WHERE star = '${vs.starId}' AND civilization = '${vs.civilizationId}';
+        INSERT INTO visible_stars(
+            star,
+            civilization,
+            quantity
+        ) 
+        SELECT '${vs.starId}', '${vs.civilizationId}', ${vs.quantity} WHERE NOT EXISTS(SELECT 1 FROM visible_stars vs WHERE vs.star = '${vs.starId}' AND vs.civilization = '${vs.civilizationId}');
         `;
-        return this.ds.execute(insertQuery, []);
+        return this.ds.execute(query, [ ]);
     }
 
     public getViewerUserIdsInStars(starIds: string[]): Observable<{ userId: string }[]> {
@@ -122,8 +119,28 @@ export class StarsDao {
         FROM
             civilizations c JOIN visible_stars vs ON vs.civilization = c.id
         WHERE
-            vs.star IN (${starIds.map((id,i) => `$${i + 1}`)});
+            vs.quantity > 0 AND vs.star IN (${starIds.map((id,i) => `$${i + 1}`)});
         `, starIds);
+    }
+
+    public getStarCivilizationVisibility(starId: string, civilizationId: string): Observable<number> {
+        return this.ds.getOne<{ quantity: number; }>(`
+        SELECT
+            vs.quantity
+        FROM
+            visible_stars vs
+        WHERE
+            vs.star = $1 AND vs.civilization = $2;
+        `, [ starId, civilizationId ])
+        .pipe(
+            map(result => {
+                if (!result) {
+                    return 0;
+                } else {
+                    return result.quantity;
+                }
+            })
+        );
     }
 
     public canCivilizationViewStar(civilizationId: string, starId: string): Observable<boolean> {
