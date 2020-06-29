@@ -45,6 +45,17 @@ export class StarsDao {
         `, []);
     }
 
+    public getStarsWithPresence(civilizationId: string): Observable<string[]> {
+        return this.ds.getAll<Star>(
+            `
+            SELECT
+                star as id
+            FROM
+                visible_stars
+            WHERE civilization = $1;
+        `, [ civilizationId ]).pipe(map(stars => stars.map(star => star.id)));
+    }
+
     public getRandomUnexploredStar(): Observable<Star> {
         return this.ds.getOne<Star>(
             `
