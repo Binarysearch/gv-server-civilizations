@@ -12,6 +12,8 @@ import { PlanetsDao } from "../dao/planets-dao";
 import { Planet } from "../model/planet";
 import { Fleet } from "../model/fleet";
 import { FleetsDao } from "../dao/fleets-dao";
+import { Ship } from "../model/ship";
+import { ShipsDao } from "../dao/ships-dao";
 
 @Controller
 export class CivilizationsController {
@@ -21,6 +23,7 @@ export class CivilizationsController {
         private starsDao: StarsDao,
         private planetsDao: PlanetsDao,
         private fleetsDao: FleetsDao,
+        private shipsDao: ShipsDao,
         private userNotificationService: UserNotificationService
     ) { }
 
@@ -65,8 +68,14 @@ export class CivilizationsController {
                     shipCount: 1
                 }];
 
+                const ships: Ship[] = [{
+                    id: uuid.v4(),
+                    fleet: fleetId
+                }];
+
                 forkJoin(
                     this.planetsDao.savePlanets(planets),
+                    this.shipsDao.saveShips(ships),
                     this.fleetsDao.saveFleets(fleets),
                     this.civilizationsDao.createCivilization(civilization),
                     this.starsDao.markStarAsExplored(starId),
