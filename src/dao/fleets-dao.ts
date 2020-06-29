@@ -31,7 +31,7 @@ export class FleetsDao {
         `, [ fleetId ]);
     }
 
-    public getFleets(civilizationId: string): Observable<Fleet[]> {
+    public getVisibleFleets(civilizationId: string): Observable<Fleet[]> {
         return this.ds.getAll<Fleet>(
             `
             SELECT

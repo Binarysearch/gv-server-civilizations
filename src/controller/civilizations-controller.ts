@@ -14,6 +14,8 @@ import { Fleet } from "../model/fleet";
 import { FleetsDao } from "../dao/fleets-dao";
 import { Ship } from "../model/ship";
 import { ShipsDao } from "../dao/ships-dao";
+import { ColoniesDao } from "../dao/colonies-dao";
+import { Colony } from "../model/colony";
 
 @Controller
 export class CivilizationsController {
@@ -24,6 +26,7 @@ export class CivilizationsController {
         private planetsDao: PlanetsDao,
         private fleetsDao: FleetsDao,
         private shipsDao: ShipsDao,
+        private coloniesDao: ColoniesDao,
         private userNotificationService: UserNotificationService
     ) { }
 
@@ -43,11 +46,11 @@ export class CivilizationsController {
     public createCivilization(session: Session, name: string): Observable<string> {
         return new Observable((obs) => {
             this.starsDao.getRandomUnexploredStar().subscribe(star => {
-                const id = uuid.v4();
+                const civilizationId = uuid.v4();
                 const homeworld = uuid.v4();
                 const fleetId = uuid.v4();
                 const starId = star.id;
-                const civilization = { id: id, user: session.user.id, name: name, homeworld: homeworld };
+                const civilization = { id: civilizationId, user: session.user.id, name: name, homeworld: homeworld };
                 
                 const planets: Planet[] = [{
                     id: homeworld,
@@ -59,7 +62,7 @@ export class CivilizationsController {
 
                 const fleets: Fleet[] = [{
                     id: fleetId,
-                    civilizationId: id,
+                    civilizationId: civilizationId,
                     originId: starId,
                     destinationId: starId,
                     startTravelTime: 0,
@@ -73,18 +76,25 @@ export class CivilizationsController {
                     fleet: fleetId
                 }];
 
+                const colonies: Colony[] = [{
+                    id: uuid.v4(),
+                    civilization: civilizationId,
+                    planet: homeworld
+                }];
+
                 forkJoin(
                     this.planetsDao.savePlanets(planets),
                     this.shipsDao.saveShips(ships),
                     this.fleetsDao.saveFleets(fleets),
+                    this.coloniesDao.saveColonies(colonies),
                     this.civilizationsDao.createCivilization(civilization),
                     this.starsDao.markStarAsExplored(starId),
-                    this.starsDao.saveKnownStars([{ starId: starId, civilizationId: id }]),
-                    this.starsDao.addVisibilityToStar({ starId: starId, civilizationId: id, quantity: 2 }),
+                    this.starsDao.saveKnownStars([{ starId: starId, civilizationId: civilizationId }]),
+                    this.starsDao.addVisibilityToStar({ starId: starId, civilizationId: civilizationId, quantity: 2 }),
                 ).subscribe(() => {
-                    session.civilizationId = id;
+                    session.civilizationId = civilizationId;
                     this.userNotificationService.sendToUser(session.user.id, CREATE_CIVILIZATION_CHANNEL, civilization)
-                    obs.next(id);
+                    obs.next(civilizationId);
                     obs.complete();
                 });
             });

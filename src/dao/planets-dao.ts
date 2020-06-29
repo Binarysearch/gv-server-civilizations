@@ -17,13 +17,13 @@ export class PlanetsDao {
             `
             SELECT
                 p.id,
-                p.star_system as "starSystem",
+                p.star as "starSystem",
                 p.type,
                 p.size,
                 p.orbit
             FROM
                 planets p
-                join known_stars ks on ks.star = p.star_system and ks.civilization = $1;
+                join known_stars ks on ks.star = p.star and ks.civilization = $1;
         `, [ civilizationId ]);
     }
 
@@ -36,7 +36,7 @@ export class PlanetsDao {
         const insertQuery = `
             INSERT INTO planets(
                 id,
-                star_system,
+                star,
                 type,
                 size,
                 orbit

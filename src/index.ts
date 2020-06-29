@@ -16,6 +16,7 @@ import { StarsDao } from './dao/stars-dao';
 import { Star } from './model/star';
 import { FleetsController } from './controller/fleets-controller';
 import { ShipsController } from './controller/ships-controller';
+import { ColoniesController } from './controller/colonies-controller';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
@@ -79,7 +80,7 @@ CREATE TABLE known_stars(
 DROP TABLE IF EXISTS planets;
 CREATE TABLE planets(
     id text PRIMARY KEY,
-    star_system text,
+    star text,
     type integer,
     size integer,
     orbit integer
@@ -109,6 +110,13 @@ DROP TABLE IF EXISTS ships;
 CREATE TABLE ships(
     id text PRIMARY KEY,
     fleet text
+);
+
+DROP TABLE IF EXISTS colonies;
+CREATE TABLE colonies(
+    id text PRIMARY KEY,
+    civilization text,
+    planet text
 );
 `, []).subscribe(()=>{
     injector.setProviders([
@@ -147,6 +155,7 @@ CREATE TABLE ships(
             PlanetsController,
             FleetsController,
             ShipsController,
+            ColoniesController,
         ],
         channels: [
             CREATE_CIVILIZATION_CHANNEL,

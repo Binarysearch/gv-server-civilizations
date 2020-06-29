@@ -27,7 +27,7 @@ export class FleetsController {
 
     @Request('get-fleets')
     public getFleets(session: Session): Observable<FleetInfoDto[]> {
-        return this.fleetsDao.getFleets(session.civilizationId);
+        return this.fleetsDao.getVisibleFleets(session.civilizationId);
     }
 
     @Request('start-travel')
