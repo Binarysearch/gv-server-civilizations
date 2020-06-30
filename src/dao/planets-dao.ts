@@ -27,6 +27,22 @@ export class PlanetsDao {
         `, [ civilizationId ]);
     }
 
+    public getStarPlanets(starIdId: string): Observable<Planet[]> {
+        return this.ds.getAll<Planet>(
+            `
+            SELECT
+                p.id,
+                p.star as "starSystem",
+                p.type,
+                p.size,
+                p.orbit
+            FROM
+                planets p
+            WHERE 
+                p.star = $1;
+        `, [ starIdId ]);
+    }
+
     public savePlanets(planets: Planet[]): Observable<void> {
         
         const values = planets.map(p => {

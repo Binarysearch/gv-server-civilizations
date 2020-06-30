@@ -165,6 +165,17 @@ export class StarsDao {
         );
     }
 
+    public isExploredStar(starId: string): Observable<boolean> {
+        return this.ds.getOne<any>(`
+        SELECT
+            1
+        FROM
+            stars
+        WHERE
+            explored AND id = $1;
+        `, [ starId ]).pipe(map(r => r !== undefined));
+    }
+
     public canCivilizationViewStar(civilizationId: string, starId: string): Observable<boolean> {
         return this.ds.getOne<any>(`
         SELECT
@@ -172,7 +183,18 @@ export class StarsDao {
         FROM
             visible_stars vs
         WHERE
-            vs.civilization = $1 AND vs.star = $2;
+            vs.civilization = $1 AND vs.star = $2 AND quantity > 0;
+        `, [ civilizationId, starId ]).pipe(map(r => r !== undefined));
+    }
+
+    public isExploredStarByCivilization(civilizationId: string, starId: string): Observable<boolean> {
+        return this.ds.getOne<any>(`
+        SELECT
+            1
+        FROM
+            known_stars ks
+        WHERE
+            ks.civilization = $1 AND ks.star = $2;
         `, [ civilizationId, starId ]).pipe(map(r => r !== undefined));
     }
 

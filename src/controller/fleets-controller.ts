@@ -1,5 +1,5 @@
 import { Controller, Request } from "@piros/tssf";
-import { Observable, of, forkJoin } from "rxjs";
+import { Observable, of, forkJoin, Subject, ReplaySubject } from "rxjs";
 import { FleetInfoDto } from "../interface/dtos/fleet-info-dto";
 import { FleetsDao } from "../dao/fleets-dao";
 import { Session } from "../services/session";
@@ -9,12 +9,17 @@ import { StarsDao } from "../dao/stars-dao";
 import { Fleet } from "../model/fleet";
 import { Star } from "../model/star";
 import { INVALID_TRAVEL_ERROR } from "../interface/errors/errors";
-import { START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, VISIBILITY_LOST_NOTIFICATIONS_CHANNEL } from "../channels";
+import { START_TRAVEL_NOTIFICATIONS_CHANNEL, END_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, VISIBILITY_LOST_NOTIFICATIONS_CHANNEL, EXPLORE_STAR_NOTIFICATIONS_CHANNEL } from "../channels";
 import { StartTravelNotificationDto } from "../interface/dtos/start-travel-notification-dto";
 import { EndTravelNotificationDto } from "../interface/dtos/end-travel-notification-dto";
 import { DeleteFleetNotificationDto } from "../interface/dtos/delete-fleet-notification-dto";
 import { VisibilityGainedNotificationDto } from "../interface/dtos/visibility-gained-notification";
 import { VisibilityLostNotificationDto } from "../interface/dtos/visibility-lost-notidication";
+import { ExploreStarNotificationDto } from "../interface/dtos/explore-star-notification-dto";
+import { Planet } from "../model/planet";
+
+import * as uuid from "uuid";
+import { PlanetsDao } from "../dao/planets-dao";
 
 @Controller
 export class FleetsController {
@@ -22,6 +27,7 @@ export class FleetsController {
     constructor(
         private fleetsDao: FleetsDao,
         private starsDao: StarsDao,
+        private planetsDao: PlanetsDao,
         private userNotificationService: UserNotificationService
     ) { }
 
@@ -135,6 +141,49 @@ export class FleetsController {
                                     incomingFleets: []
                                 };
                                 this.userNotificationService.sendToUser(session.user.id, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, visibilityGainNotification);
+                            }
+                        });
+
+                        //Crear planetas si no estaban creados
+                        const planetsSubject: ReplaySubject<Planet[]> = new ReplaySubject();
+                        this.starsDao.isExploredStar(dto.destinationStarId).subscribe(explored =>{
+                            if (!explored) {
+                                const planets: Planet[] = [{
+                                    id: uuid.v4(),
+                                    starSystem: dto.destinationStarId,
+                                    type: 5,
+                                    size: 4,
+                                    orbit: 3
+                                }];
+
+                                forkJoin(
+                                    this.planetsDao.savePlanets(planets),
+                                    this.starsDao.markStarAsExplored(dto.destinationStarId)
+                                ).subscribe(() => {
+                                    planetsSubject.next(planets);
+                                    planetsSubject.complete();
+                                });
+
+                            } else {
+                                this.planetsDao.getStarPlanets(dto.destinationStarId).subscribe(planets => {
+                                    planetsSubject.next(planets);
+                                    planetsSubject.complete();
+                                });
+                            }
+                        });
+                        
+                        //enviar evento explorar si no estaba explorado
+                        this.starsDao.isExploredStarByCivilization(fleet.civilizationId, dto.destinationStarId).subscribe(explored =>{
+                            if (!explored) {
+                                this.starsDao.saveKnownStars([{ starId: dto.destinationStarId, civilizationId: fleet.civilizationId }]).subscribe(() => {
+                                    planetsSubject.subscribe(planets => {
+                                        const exploreStarNotification: ExploreStarNotificationDto = {
+                                            starId: dto.destinationStarId,
+                                            planets: planets
+                                        };
+                                        this.userNotificationService.sendToUser(session.user.id, EXPLORE_STAR_NOTIFICATIONS_CHANNEL, exploreStarNotification);
+                                    });
+                                });
                             }
                         });
 
