@@ -21,4 +21,9 @@ export class StarsController {
         return this.starsDao.getStarsWithPresence(session.civilizationId);
     }
 
+    @Request('get-explored-stars')
+    public getExploredStars(session: Session): Observable<string[]> {
+        return this.starsDao.getExploredStars(session.civilizationId);
+    }
+
 }

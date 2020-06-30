@@ -45,6 +45,17 @@ export class StarsDao {
         `, []);
     }
 
+    public getExploredStars(civilizationId: string): Observable<string[]> {
+        return this.ds.getAll<Star>(
+            `
+            SELECT
+                star as id
+            FROM
+                known_stars
+            WHERE civilization = $1;
+        `, [ civilizationId ]).pipe(map(stars => stars.map(star => star.id)));
+    }
+
     public getStarsWithPresence(civilizationId: string): Observable<string[]> {
         return this.ds.getAll<Star>(
             `
@@ -52,7 +63,7 @@ export class StarsDao {
                 star as id
             FROM
                 visible_stars
-            WHERE civilization = $1;
+            WHERE civilization = $1 AND quantity > 0;
         `, [ civilizationId ]).pipe(map(stars => stars.map(star => star.id)));
     }
 
