@@ -20,6 +20,7 @@ import { Planet } from "../model/planet";
 
 import * as uuid from "uuid";
 import { PlanetsDao } from "../dao/planets-dao";
+import { ColoniesDao } from "../dao/colonies-dao";
 
 @Controller
 export class FleetsController {
@@ -28,6 +29,7 @@ export class FleetsController {
         private fleetsDao: FleetsDao,
         private starsDao: StarsDao,
         private planetsDao: PlanetsDao,
+        private coloniesDao: ColoniesDao,
         private userNotificationService: UserNotificationService
     ) { }
 
@@ -133,14 +135,17 @@ export class FleetsController {
                         };
 
                         //enviar evento ganar visibilidad si no tenia visibilidad
-                        this.starsDao.canCivilizationViewStar(fleet.civilizationId, dto.destinationStarId).subscribe(result =>{
-                            if (!result) {
-                                const visibilityGainNotification: VisibilityGainedNotificationDto = {
-                                    starId: dto.destinationStarId,
-                                    orbitingFleets: [],
-                                    incomingFleets: []
-                                };
-                                this.userNotificationService.sendToUser(session.user.id, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, visibilityGainNotification);
+                        this.starsDao.canCivilizationViewStar(fleet.civilizationId, dto.destinationStarId).subscribe(canView => {
+                            if (!canView) {
+                                this.coloniesDao.getColoniesInStar(dto.destinationStarId).subscribe(colonies => {
+                                    const visibilityGainNotification: VisibilityGainedNotificationDto = {
+                                        starId: dto.destinationStarId,
+                                        orbitingFleets: [],
+                                        incomingFleets: [],
+                                        colonies: colonies
+                                    };
+                                    this.userNotificationService.sendToUser(session.user.id, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, visibilityGainNotification);
+                                });
                             }
                         });
 

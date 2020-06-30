@@ -12,6 +12,20 @@ export class ColoniesDao {
         
     }
 
+    public getColoniesInStar(starId: string): Observable<Colony[]> {
+        return this.ds.getAll<Colony>(
+            `
+            SELECT
+                c.id,
+                c.civilization,
+                c.planet
+            FROM
+                colonies c
+                join planets p ON p.id = c.planet
+            WHERE p.star = $1;
+        `, [ starId ]);
+    }
+
     public getVisibleColonies(civilizationId: string): Observable<Colony[]> {
         return this.ds.getAll<Colony>(
             `
