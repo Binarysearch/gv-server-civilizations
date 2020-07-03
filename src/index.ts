@@ -18,6 +18,7 @@ import { FleetsController } from './controller/fleets-controller';
 import { ShipsController } from './controller/ships-controller';
 import { ColoniesController } from './controller/colonies-controller';
 import { EndTravelManagerService } from './services/fleets/end-travel-manager-service';
+import { StarVisibilityService } from './services/star-visibility/star-visibility-manager-service';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
@@ -178,5 +179,10 @@ CREATE TABLE colonies(
 
     const endTravelManagerService: EndTravelManagerService = injector.resolve(EndTravelManagerService);
     endTravelManagerService.startProcesingEvents();
+
+    const starVisibilityService: StarVisibilityService = injector.resolve(StarVisibilityService);
+    starVisibilityService.startProcesingEvents();
+
+
 });
 

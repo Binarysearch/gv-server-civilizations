@@ -1,17 +1,14 @@
-import { Logger } from "@piros/tssf";
 import { Observable, of, forkJoin, Subject, ReplaySubject } from "rxjs";
 import { FleetsDao } from "../../dao/fleets-dao";
 import { UserNotificationService } from "../../services/user-notification-service";
 import { StarsDao } from "../../dao/stars-dao";
-import { END_TRAVEL_NOTIFICATIONS_CHANNEL, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, EXPLORE_STAR_NOTIFICATIONS_CHANNEL } from "../../channels";
+import { END_TRAVEL_NOTIFICATIONS_CHANNEL, EXPLORE_STAR_NOTIFICATIONS_CHANNEL } from "../../channels";
 import { EndTravelNotificationDto } from "../../interface/dtos/end-travel-notification-dto";
-import { VisibilityGainedNotificationDto } from "../../interface/dtos/visibility-gained-notification";
 import { ExploreStarNotificationDto } from "../../interface/dtos/explore-star-notification-dto";
 import { Planet } from "../../model/planet";
 
 import * as uuid from "uuid";
 import { PlanetsDao } from "../../dao/planets-dao";
-import { ColoniesDao } from "../../dao/colonies-dao";
 import { Injectable } from "@piros/ioc";
 import { FleetService } from "./fleets-service";
 
@@ -34,24 +31,20 @@ export class EndTravelManagerService {
 
     constructor(
         private fleetService: FleetService,
-        private logger: Logger,
         private fleetsDao: FleetsDao,
         private starsDao: StarsDao,
         private planetsDao: PlanetsDao,
-        private coloniesDao: ColoniesDao,
         private userNotificationService: UserNotificationService
     ) { }
 
     public startProcesingEvents(): void {
         this.fleetService.getStartTravelEvents().subscribe(
             startTravelEvent => {
-                this.logger.log(`EndTravelManagerService -> Received start travel event.`);
 
                 const {
                     fleetId,
                     destinationStarId,
                     userId,
-                    civilizationId,
                     startTravelTime,
                     travelTime
                 } = startTravelEvent;
@@ -71,21 +64,6 @@ export class EndTravelManagerService {
                                 startTravelTime: 0
                             }
                         };
-
-                        //enviar evento ganar visibilidad si no tenia visibilidad
-                        this.starsDao.canCivilizationViewStar(civilizationId, destinationStarId).subscribe(canView => {
-                            if (!canView) {
-                                this.coloniesDao.getColoniesInStar(destinationStarId).subscribe(colonies => {
-                                    const visibilityGainNotification: VisibilityGainedNotificationDto = {
-                                        starId: destinationStarId,
-                                        orbitingFleets: [],
-                                        incomingFleets: [],
-                                        colonies: colonies
-                                    };
-                                    this.userNotificationService.sendToUser(userId, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, visibilityGainNotification);
-                                });
-                            }
-                        });
 
                         //Crear planetas si no estaban creados
                         const planetsSubject: ReplaySubject<Planet[]> = new ReplaySubject();
@@ -131,17 +109,22 @@ export class EndTravelManagerService {
                         });
 
                         forkJoin(
-                            this.starsDao.addVisibilityToStar({ starId: destinationStarId, civilizationId: fleet.civilizationId, quantity: 1 }),
-                            this.fleetsDao.updateFleet(endTravelNotification.fleet)
-                        ).subscribe(() => {
+                            this.fleetsDao.updateFleet(endTravelNotification.fleet),
+                            this.starsDao.getViewerUserIdsInStars([destinationStarId])
+                        ).subscribe(results => {
 
-                            this.starsDao.getViewerUserIdsInStars([destinationStarId]).subscribe(users =>{
-                                users.forEach(u => {
-                                    this.userNotificationService.sendToUser(u.userId, END_TRAVEL_NOTIFICATIONS_CHANNEL, endTravelNotification);
-                                });
+                            const usersPresentInDestination = results[1];
+                            if (!usersPresentInDestination.find(u => u.userId === userId)) {
+                                usersPresentInDestination.push({ userId: userId });
+                            }
+
+                            usersPresentInDestination.forEach(u => {
+                                this.userNotificationService.sendToUser(u.userId, END_TRAVEL_NOTIFICATIONS_CHANNEL, endTravelNotification);
                             });
 
+                            this.endTravelEventsSubject.next(startTravelEvent);
                         });
+                        
                     });
                     
                 }, remainingTravelTime);

@@ -7,12 +7,12 @@ import { StarsDao } from "../../dao/stars-dao";
 import { Fleet } from "../../model/fleet";
 import { Star } from "../../model/star";
 import { INVALID_TRAVEL_ERROR } from "../../interface/errors/errors";
-import { START_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL, VISIBILITY_LOST_NOTIFICATIONS_CHANNEL } from "../../channels";
+import { START_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL } from "../../channels";
 import { StartTravelNotificationDto } from "../../interface/dtos/start-travel-notification-dto";
 import { DeleteFleetNotificationDto } from "../../interface/dtos/delete-fleet-notification-dto";
-import { VisibilityLostNotificationDto } from "../../interface/dtos/visibility-lost-notidication";
 
 import { Injectable } from "@piros/ioc";
+import { Logger } from "@piros/tssf";
 
 export interface StartTravelEvent {
 
@@ -34,7 +34,8 @@ export class FleetService {
     constructor(
         private fleetsDao: FleetsDao,
         private starsDao: StarsDao,
-        private userNotificationService: UserNotificationService
+        private userNotificationService: UserNotificationService,
+        private logger: Logger
     ) { }
 
     public startTravel(session: Session, dto: StartTravelDto): Observable<boolean> {
@@ -60,16 +61,6 @@ export class FleetService {
                 const travelDistance = Math.sqrt(x*x + y*y);
                 const travelTime = travelDistance / fleet.speed;
 
-                this.startTravelEventsSubject.next({
-                    fleetId: dto.fleetId,
-                    originStarId: dto.originStarId,
-                    destinationStarId: dto.destinationStarId,
-                    userId: session.user.id,
-                    civilizationId: session.civilizationId,
-                    startTravelTime: startTravelTime,
-                    travelTime: travelTime
-                });
-
                 const newFleet = {
                     ...fleet,
                     originId: fleet.destinationId,
@@ -78,6 +69,18 @@ export class FleetService {
                 };
 
                 this.fleetsDao.updateFleet(newFleet).subscribe(() => {
+
+                    this.startTravelEventsSubject.next({
+                        fleetId: dto.fleetId,
+                        originStarId: dto.originStarId,
+                        destinationStarId: dto.destinationStarId,
+                        userId: session.user.id,
+                        civilizationId: session.civilizationId,
+                        startTravelTime: startTravelTime,
+                        travelTime: travelTime
+                    });
+                    this.logger.log(`FleetService -> Sending start travel event.`);
+
                     const startTravelNotification: StartTravelNotificationDto = {
                         fleet: newFleet
                     };
@@ -116,20 +119,6 @@ export class FleetService {
                                 this.userNotificationService.sendToUser(u.userId, DELETE_FLEET_NOTIFICATIONS_CHANNEL, deleteFleetNotification);
                             }
                         );
-
-                        //Enviar evento perdida de visibilidad cuando se pierda la visibilidad en el sistema origen
-                        this.starsDao.getStarCivilizationVisibility(dto.originStarId, session.civilizationId).subscribe((quantity) => {
-                            this.starsDao.addVisibilityToStar({ starId: dto.originStarId, civilizationId: fleet.civilizationId, quantity: -1 }).subscribe(()=>{
-                                if (quantity === 1) {
-                                    const visibilityLostNotification: VisibilityLostNotificationDto = {
-                                        starId: dto.originStarId
-                                    };
-                                    usersPresentInOrigin.forEach(u => {
-                                        this.userNotificationService.sendToUser(u.userId, VISIBILITY_LOST_NOTIFICATIONS_CHANNEL, visibilityLostNotification);
-                                    });
-                                }
-                            });
-                        });
                         
                     });
                     
