@@ -11,6 +11,7 @@ import { Injectable } from "@piros/ioc";
 import { FleetService } from "../fleets/fleets-service";
 import { EndTravelManagerService } from "../fleets/end-travel-manager-service";
 import { VisibilityLostNotificationDto } from "../../interface/dtos/visibility-lost-notidication";
+import { ColoniesService } from "../fleets/colonies-service";
 
 @Injectable
 export class StarVisibilityService {
@@ -18,7 +19,8 @@ export class StarVisibilityService {
     constructor(
         private fleetService: FleetService,
         private starsDao: StarsDao,
-        private coloniesDao: ColoniesDao,
+        private planetsDao: PlanetsDao,
+        private coloniesService: ColoniesService,
         private userNotificationService: UserNotificationService,
         private endTravelManagerService: EndTravelManagerService
     ) { }
@@ -34,7 +36,7 @@ export class StarVisibilityService {
 
                 //Enviar evento perdida de visibilidad cuando se pierda la visibilidad en el sistema origen
                 this.starsDao.getStarCivilizationVisibility(originStarId, civilizationId).subscribe((quantity) => {
-                    this.starsDao.addVisibilityToStar({ starId: originStarId, civilizationId: civilizationId, quantity: -1 }).subscribe(()=>{
+                    this.starsDao.addVisibilityToStar({ starId: originStarId, civilizationId: civilizationId, quantity: -1 }).subscribe(() => {
                         if (quantity === 1) {
                             const visibilityLostNotification: VisibilityLostNotificationDto = {
                                 starId: originStarId
@@ -53,26 +55,34 @@ export class StarVisibilityService {
                     userId,
                     civilizationId
                 } = startTravelEvent;
-                
-                //enviar evento ganar visibilidad si no tenia visibilidad
+
                 this.starsDao.canCivilizationViewStar(civilizationId, destinationStarId).subscribe(canView => {
-                    if (!canView) {
-                        this.coloniesDao.getColoniesInStar(destinationStarId).subscribe(colonies => {
-                            const visibilityGainNotification: VisibilityGainedNotificationDto = {
-                                starId: destinationStarId,
-                                orbitingFleets: [],
-                                incomingFleets: [],
-                                colonies: colonies
-                            };
-                            this.userNotificationService.sendToUser(userId, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, visibilityGainNotification);
-                        });
-                    }
-                    this.starsDao.addVisibilityToStar({ starId: destinationStarId, civilizationId: civilizationId, quantity: 1 }).subscribe();
+                    this.starsDao.addVisibilityToStar({ starId: destinationStarId, civilizationId: civilizationId, quantity: 1 }).subscribe(() => {
+                        //enviar evento ganar visibilidad si no tenia visibilidad
+                        if (!canView) {
+                            this.coloniesService.getColoniesInStar(destinationStarId).subscribe(colonies => {
+                                const visibilityGainNotification: VisibilityGainedNotificationDto = {
+                                    starId: destinationStarId,
+                                    orbitingFleets: [],
+                                    incomingFleets: [],
+                                    colonies: colonies
+                                };
+                                this.userNotificationService.sendToUser(userId, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, visibilityGainNotification);
+                            });
+                        }
+                    });
                 });
             }
         );
 
+        this.coloniesService.getCreateColonyEvents().subscribe(createColonyEvent => {
+            const {
+                civilizationId,
+                starId
+            } = createColonyEvent;
 
+            this.starsDao.addVisibilityToStar({ starId: starId, civilizationId: civilizationId, quantity: 1 }).subscribe();
+
+        })
     }
-    
 }

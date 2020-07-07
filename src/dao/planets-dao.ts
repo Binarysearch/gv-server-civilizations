@@ -12,6 +12,22 @@ export class PlanetsDao {
         
     }
 
+    public getPlanetById(planetId: string): Observable<Planet> {
+        return this.ds.getOne<Planet>(
+            `
+            SELECT
+                p.id,
+                p.star as "starSystem",
+                p.type,
+                p.size,
+                p.orbit
+            FROM
+                planets p
+            WHERE
+                id = $1;
+        `, [ planetId ]);
+    }
+
     public getPlanets(civilizationId: string): Observable<Planet[]> {
         return this.ds.getAll<Planet>(
             `
