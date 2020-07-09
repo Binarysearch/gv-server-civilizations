@@ -61,6 +61,7 @@ export class StarVisibilityService {
                         //enviar evento ganar visibilidad si no tenia visibilidad
                         if (!canView) {
                             this.coloniesService.getColoniesInStar(destinationStarId).subscribe(colonies => {
+
                                 const visibilityGainNotification: VisibilityGainedNotificationDto = {
                                     starId: destinationStarId,
                                     orbitingFleets: [],

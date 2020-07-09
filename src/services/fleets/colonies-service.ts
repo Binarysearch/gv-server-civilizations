@@ -46,15 +46,16 @@ export class ColoniesService {
     public createColony(session: Session, planetId: string): Observable<boolean> {
         return new Observable(obs => {
             const id = uuid.v4();
-            (
+            forkJoin(
                 this.coloniesDao.saveColonies([{
                     id: id,
                     civilization: session.civilizationId,
                     planet: planetId
                 }]),
                 this.planetsDao.getPlanetById(planetId)
-            ).subscribe(planet => {
-
+            ).subscribe(results => {
+                const planet = results[1];
+                
                 this.createColonyEventsSubject.next({
                     id: id,
                     civilizationId: session.civilizationId,
