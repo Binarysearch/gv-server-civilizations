@@ -12,6 +12,7 @@ import { FleetService } from "../fleets/fleets-service";
 import { EndTravelManagerService } from "../fleets/end-travel-manager-service";
 import { VisibilityLostNotificationDto } from "../../interface/dtos/visibility-lost-notidication";
 import { ColoniesService } from "../fleets/colonies-service";
+import { forkJoin } from "rxjs";
 
 @Injectable
 export class StarVisibilityService {
@@ -60,12 +61,20 @@ export class StarVisibilityService {
                     this.starsDao.addVisibilityToStar({ starId: destinationStarId, civilizationId: civilizationId, quantity: 1 }).subscribe(() => {
                         //enviar evento ganar visibilidad si no tenia visibilidad
                         if (!canView) {
-                            this.coloniesService.getColoniesInStar(destinationStarId).subscribe(colonies => {
+                            forkJoin(
+                                this.coloniesService.getColoniesInStar(destinationStarId),
+                                this.fleetService.getFleetsWithDestination(destinationStarId),
+                            ).subscribe(results => {
+
+                                const colonies = results[0];
+                                const fleets = results[1];
+                                const orbitingFleets = fleets.filter(f => f.originId === f.destinationId);
+                                const incomingFleets = fleets.filter(f => f.originId !== f.destinationId);
 
                                 const visibilityGainNotification: VisibilityGainedNotificationDto = {
                                     starId: destinationStarId,
-                                    orbitingFleets: [],
-                                    incomingFleets: [],
+                                    orbitingFleets: orbitingFleets,
+                                    incomingFleets: incomingFleets,
                                     colonies: colonies
                                 };
                                 this.userNotificationService.sendToUser(userId, VISIBILITY_GAIN_NOTIFICATIONS_CHANNEL, visibilityGainNotification);

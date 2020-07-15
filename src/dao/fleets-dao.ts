@@ -31,6 +31,25 @@ export class FleetsDao {
         `, [ fleetId ]);
     }
 
+    public getFleetsWithDestination(destinationStarId: string): Observable<Fleet[]> {
+        return this.ds.getAll<Fleet>(
+            `
+            SELECT
+                f.id,
+                f.civilization as "civilizationId",
+                f.origin as "originId",
+                f.destination as "destinationId",
+                f.start_travel_time as "startTravelTime",
+                f.speed,
+                f.seed,
+                f.ship_count as "shipCount"
+            FROM
+                fleets f
+            WHERE
+                f.destination = $1;
+        `, [ destinationStarId ]);
+    }
+
     public getVisibleFleets(civilizationId: string): Observable<Fleet[]> {
         return this.ds.getAll<Fleet>(
             `

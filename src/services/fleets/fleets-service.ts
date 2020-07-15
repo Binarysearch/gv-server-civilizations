@@ -140,4 +140,8 @@ export class FleetService {
     public getVisibleFleets(civilizationId: string): Observable<Fleet[]> {
         return this.fleetsDao.getVisibleFleets(civilizationId);
     }
+
+    public getFleetsWithDestination(destinationStarId: string): Observable<Fleet[]> {
+        return this.fleetsDao.getFleetsWithDestination(destinationStarId);
+    }
 }
