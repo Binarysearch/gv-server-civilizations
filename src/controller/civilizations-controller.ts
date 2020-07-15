@@ -27,7 +27,7 @@ export class CivilizationsController {
         private fleetsDao: FleetsDao,
         private shipsDao: ShipsDao,
         private coloniesDao: ColoniesDao,
-        private userNotificationService: UserNotificationService
+        private userNotificationService: UserNotificationService,
     ) { }
 
     @Request('get-civilization')

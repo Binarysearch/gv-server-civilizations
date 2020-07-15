@@ -19,6 +19,7 @@ import { ShipsController } from './controller/ships-controller';
 import { ColoniesController } from './controller/colonies-controller';
 import { EndTravelManagerService } from './services/fleets/end-travel-manager-service';
 import { StarVisibilityService } from './services/star-visibility/star-visibility-manager-service';
+import { TestController } from './controller/test-controller';
 
 class MyStatusProvider extends DefaultStatusProvider {
 
@@ -158,6 +159,7 @@ CREATE TABLE colonies(
             FleetsController,
             ShipsController,
             ColoniesController,
+            TestController
         ],
         channels: [
             CREATE_CIVILIZATION_CHANNEL,

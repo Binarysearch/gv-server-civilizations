@@ -49,4 +49,8 @@ export class UserNotificationService {
             });
         }
     }
+
+    clearState() {
+        this.userSubscriptions.clear();
+    }
 }

@@ -11,6 +11,7 @@ import * as uuid from "uuid";
 import { PlanetsDao } from "../../dao/planets-dao";
 import { Injectable } from "@piros/ioc";
 import { FleetService } from "./fleets-service";
+import { clearTimeout } from "timers";
 
 export interface EndTravelEvent {
 
@@ -26,6 +27,8 @@ export interface EndTravelEvent {
 
 @Injectable
 export class EndTravelManagerService {
+
+    private timeouts: NodeJS.Timeout[] = [];
 
     private endTravelEventsSubject: Subject<EndTravelEvent> = new Subject();
 
@@ -53,7 +56,7 @@ export class EndTravelManagerService {
                 const elapsedTravelTime = now - startTravelTime;
                 const remainingTravelTime = travelTime - elapsedTravelTime;
 
-                setTimeout(() => {
+                this.setTimeout(() => {
 
                     this.fleetsDao.getFleetById(fleetId).subscribe(fleet => {
                         const endTravelNotification: EndTravelNotificationDto = {
@@ -130,6 +133,16 @@ export class EndTravelManagerService {
                 }, remainingTravelTime);
             }
         );
+    }
+
+    setTimeout(callback: () => void, remainingTravelTime: number) {
+        this.timeouts.push(setTimeout(callback, remainingTravelTime));
+    }
+
+    clearState() {
+        this.timeouts.forEach((t) => {
+            clearTimeout(t);
+        });
     }
 
     public getEndTravelEvents(): Observable<EndTravelEvent> {
