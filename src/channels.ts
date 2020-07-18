@@ -8,3 +8,4 @@ export const VISIBILITY_LOST_NOTIFICATIONS_CHANNEL = 'visibility-lost-notificati
 export const EXPLORE_STAR_NOTIFICATIONS_CHANNEL = 'explore-star-notifications';
 export const CREATE_COLONY_NOTIFICATIONS_CHANNEL = 'create-colony-notifications';
 export const CREATE_SHIP_NOTIFICATIONS_CHANNEL = 'create-ship-notifications';
+export const BUILDING_ORDERS_NOTIFICATIONS_CHANNEL = 'building-orders-notifications';

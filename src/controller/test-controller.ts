@@ -3,6 +3,7 @@ import { Observable, forkJoin } from "rxjs";
 import { UserNotificationService } from "../services/user-notification-service";
 import { DatabaseService } from "@piros/gv-server-commons";
 import { EndTravelManagerService } from "../services/fleets/end-travel-manager-service";
+import { ShipsService } from "../services/ships/ships-service";
 
 @Controller
 export class TestController {
@@ -10,13 +11,15 @@ export class TestController {
     constructor(
         private userNotificationService: UserNotificationService,
         private ds: DatabaseService,
-        private endTravelManagerService: EndTravelManagerService
+        private endTravelManagerService: EndTravelManagerService,
+        private shipsService: ShipsService,
     ) { }
 
     @Post('restore-state')
     public restoreState(): Observable<boolean> {
         this.userNotificationService.clearState();
         this.endTravelManagerService.clearState();
+        this.shipsService.clearState();
         return new Observable<boolean>(obs => {
             console.log('RESTORE STATE');
             forkJoin(

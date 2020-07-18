@@ -1,4 +1,4 @@
-import { Observable, of, forkJoin, Subject, ReplaySubject } from "rxjs";
+import { Observable, forkJoin, Subject, ReplaySubject } from "rxjs";
 import { FleetsDao } from "../../dao/fleets-dao";
 import { UserNotificationService } from "../../services/user-notification-service";
 import { StarsDao } from "../../dao/stars-dao";
@@ -139,6 +139,7 @@ export class EndTravelManagerService {
         this.timeouts.push(setTimeout(callback, remainingTravelTime));
     }
 
+    // TODO: Eliminar, esto es para testing
     clearState() {
         this.timeouts.forEach((t) => {
             clearTimeout(t);
