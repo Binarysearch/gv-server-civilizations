@@ -46,16 +46,16 @@ export class ShipsService {
         const startedTime = Date.now();
         const buildTime = 500;
 
+        const buildingOrder = {
+            id: uuid.v4(),
+            colonyId: colonyId,
+            type: BuildingOrderType.SHIP,
+            endTime: startedTime + buildTime,
+            startedTime: startedTime
+        }
         const buildingOrdersNotification: BuildingOrdersNotificationDto = {
-            buildingOrders: [
-                {
-                    id: uuid.v4(),
-                    colonyId: colonyId,
-                    type: BuildingOrderType.SHIP,
-                    endTime: startedTime + buildTime,
-                    startedTime: startedTime
-                }
-            ]
+            buildingOrders: [ buildingOrder ],
+            finishedBuildingOrders: []
         }
         
         this.userNotificationService.sendToUser(session.user.id, BUILDING_ORDERS_NOTIFICATIONS_CHANNEL, buildingOrdersNotification);
@@ -82,9 +82,19 @@ export class ShipsService {
                         ship: ship,
                         fleet: updatedFleet
                     }
-    
+
+                    const buildingOrdersNotification: BuildingOrdersNotificationDto = {
+                        buildingOrders: [ ],
+                        finishedBuildingOrders: [
+                            {
+                                id: buildingOrder.id,
+                                colonyId: buildingOrder.colonyId
+                            }
+                        ]
+                    }
+
                     this.userNotificationService.sendToUser(session.user.id, CREATE_SHIP_NOTIFICATIONS_CHANNEL, createShipNotification);
-                    this.userNotificationService.sendToUser(session.user.id, BUILDING_ORDERS_NOTIFICATIONS_CHANNEL, { buildingOrders: [] });
+                    this.userNotificationService.sendToUser(session.user.id, BUILDING_ORDERS_NOTIFICATIONS_CHANNEL, buildingOrdersNotification);
     
                 });
     
