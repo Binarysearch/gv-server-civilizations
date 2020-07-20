@@ -28,6 +28,22 @@ export class PlanetsDao {
         `, [ planetId ]);
     }
 
+    public getPlanetByColonyId(colonyId: string): Observable<Planet> {
+        return this.ds.getOne<Planet>(
+            `
+            SELECT
+                p.id,
+                p.star as "starSystem",
+                p.type,
+                p.size,
+                p.orbit
+            FROM
+                planets p join colonies c on c.planet = p.id
+            WHERE
+                c.id = $1;
+        `, [ colonyId ]);
+    }
+
     public getPlanets(civilizationId: string): Observable<Planet[]> {
         return this.ds.getAll<Planet>(
             `
