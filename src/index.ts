@@ -132,6 +132,15 @@ CREATE TABLE colonies(
     civilization text,
     planet text
 );
+
+DROP TABLE IF EXISTS building_orders;
+CREATE TABLE building_orders(
+    id text PRIMARY KEY,
+    type text,
+    colony text,
+    started_time text,
+    end_time text
+);
 `, []).subscribe(()=>{
     injector.setProviders([
         { provide: WsAuthService, useClass: LocalAuthService },

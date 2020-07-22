@@ -9,12 +9,15 @@ import * as uuid from "uuid";
 import { Injectable } from "@piros/ioc";
 import { ShipsDao } from "../../dao/ships-dao";
 import { BuildingOrdersNotificationDto } from "../../interface/dtos/building-orders-notification";
-import { BuildingOrderType, BuildingOrderDto } from "../../interface/dtos/building-order-dto";
+import { BuildingOrderDto } from "../../interface/dtos/building-order-dto";
 import { CreateShipNotificationDto } from "../../interface/dtos/create-ship-notification-dto";
 import { Ship } from "../../model/ship";
 import { ShipDto } from "../../interface/dtos/ship-dto";
 import { PlanetsDao } from "../../dao/planets-dao";
 import { StarsDao } from "../../dao/stars-dao";
+import { BuildingOrdersDao } from "../../dao/building-orders-dao";
+import { BuildingOrderType, BuildingOrder } from "../../model/building-order";
+import { SettingsService } from "../settings-service";
 
 export interface StartTravelEvent {
 
@@ -38,7 +41,9 @@ export class ShipsService {
         private fleetsDao: FleetsDao,
         private planetsDao: PlanetsDao,
         private starsDao: StarsDao,
-        private userNotificationService: UserNotificationService
+        private buildingOrdersDao: BuildingOrdersDao,
+        private userNotificationService: UserNotificationService,
+        private settingsService: SettingsService,
     ) { }
 
     public getFleetShips(fleetId: string): Observable<ShipDto[]> {
@@ -46,54 +51,60 @@ export class ShipsService {
     }
 
     public buildShip(session: Session, colonyId: string): Observable<boolean> {
+        return new Observable((obs) => {
+            const buildTimeMultiplier = this.settingsService.getSettings().buildTimeMultiplier;
+            const startedTime = Date.now();
+            const buildTime = 500 * buildTimeMultiplier;
 
-        const startedTime = Date.now();
-        const buildTime = 500;
+            const buildingOrder: BuildingOrder = {
+                id: uuid.v4(),
+                colonyId: colonyId,
+                type: BuildingOrderType.SHIP,
+                endTime: startedTime + buildTime,
+                startedTime: startedTime
+            }
 
-        const buildingOrder = {
-            id: uuid.v4(),
-            colonyId: colonyId,
-            type: BuildingOrderType.SHIP,
-            endTime: startedTime + buildTime,
-            startedTime: startedTime
-        }
-        const buildingOrdersNotification: BuildingOrdersNotificationDto = {
-            buildingOrders: [ buildingOrder ],
-            finishedBuildingOrders: []
-        }
-        
-        this.userNotificationService.sendToUser(session.user.id, BUILDING_ORDERS_NOTIFICATIONS_CHANNEL, buildingOrdersNotification);
-
-        this.setTimeout(() => {
-
-            this.fleetsDao.getFleetByColonyId(colonyId).subscribe(fleet => {
-                if (fleet) {
-                    this.endCreatingShip(session, fleet, buildingOrder);
-                } else {
-                    this.planetsDao.getPlanetByColonyId(colonyId).subscribe(planet => {
-                        const fleet: Fleet = {
-                            id: uuid.v4(),
-                            civilizationId: session.civilizationId,
-                            originId: planet.starSystem,
-                            destinationId: planet.starSystem,
-                            startTravelTime: 0,
-                            speed: 100,
-                            seed: Math.random(),
-                            shipCount: 1
-                        }
-                        forkJoin(
-                            this.fleetsDao.saveFleets([ fleet ]),
-                            this.starsDao.addVisibilityToStar({ starId: planet.starSystem, civilizationId: session.civilizationId, quantity: 1 })
-                        ).subscribe(() => {
-                            this.endCreatingShip(session, fleet, buildingOrder);
-                        });
-                    });
+            this.buildingOrdersDao.saveBuildingOrders([ buildingOrder ]).subscribe(() => {
+                const buildingOrdersNotification: BuildingOrdersNotificationDto = {
+                    buildingOrders: [ buildingOrder ],
+                    finishedBuildingOrders: []
                 }
-            });
-
-        }, buildTime);
+                
+                this.userNotificationService.sendToUser(session.user.id, BUILDING_ORDERS_NOTIFICATIONS_CHANNEL, buildingOrdersNotification);
         
-        return of(true);
+                this.setTimeout(() => {
+        
+                    this.fleetsDao.getFleetByColonyId(colonyId).subscribe(fleet => {
+                        if (fleet) {
+                            this.endCreatingShip(session, fleet, buildingOrder);
+                        } else {
+                            this.planetsDao.getPlanetByColonyId(colonyId).subscribe(planet => {
+                                const fleet: Fleet = {
+                                    id: uuid.v4(),
+                                    civilizationId: session.civilizationId,
+                                    originId: planet.starSystem,
+                                    destinationId: planet.starSystem,
+                                    startTravelTime: 0,
+                                    speed: 100,
+                                    seed: Math.random(),
+                                    shipCount: 1
+                                }
+                                forkJoin(
+                                    this.fleetsDao.saveFleets([ fleet ]),
+                                    this.starsDao.addVisibilityToStar({ starId: planet.starSystem, civilizationId: session.civilizationId, quantity: 1 })
+                                ).subscribe(() => {
+                                    this.endCreatingShip(session, fleet, buildingOrder);
+                                });
+                            });
+                        }
+                    });
+        
+                }, buildTime);
+
+                obs.next(true);
+                obs.complete();
+            });
+        });
     }
 
     private endCreatingShip(session: Session, fleet: Fleet, buildingOrder: BuildingOrderDto) {
@@ -109,7 +120,8 @@ export class ShipsService {
 
         forkJoin(
             this.shipsDao.saveShips([ship]),
-            this.fleetsDao.updateFleet(updatedFleet)
+            this.fleetsDao.updateFleet(updatedFleet),
+            this.buildingOrdersDao.deleteBuildingOrder(buildingOrder.id)
         ).subscribe(() => {
 
             const createShipNotification: CreateShipNotificationDto = {
