@@ -67,7 +67,7 @@ export class CivilizationsController {
                     destinationId: starId,
                     startTravelTime: 0,
                     speed: 100,
-                    seed: 1,
+                    seed: Math.random() * Math.PI * 20,
                     shipCount: 1
                 }];
 

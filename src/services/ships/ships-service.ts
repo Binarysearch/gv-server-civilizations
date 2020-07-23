@@ -86,7 +86,7 @@ export class ShipsService {
                                     destinationId: planet.starSystem,
                                     startTravelTime: 0,
                                     speed: 100,
-                                    seed: Math.random(),
+                                    seed: Math.random() * Math.PI * 20,
                                     shipCount: 1
                                 }
                                 forkJoin(
