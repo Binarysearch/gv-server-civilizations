@@ -3,6 +3,7 @@ import { Observable, forkJoin } from "rxjs";
 import { Star } from "../model/star";
 import { DatabaseService } from "@piros/gv-server-commons";
 import { map } from "rxjs/operators";
+import { Civilization } from "../model/civilization";
 
 @Injectable
 export class StarsDao {
@@ -143,6 +144,22 @@ export class StarsDao {
         WHERE
             vs.quantity > 0 AND vs.star IN (${starIds.map((id,i) => `$${i + 1}`)});
         `, starIds);
+    }
+
+    public getUnknownCivilizationsInStar(starId: string, civilizationId: string): Observable<Civilization[]> {
+        return this.ds.getAll(`
+        SELECT
+            c.id,
+            c."user",
+            c.name,
+            c.homeworld
+        FROM
+            civilizations c JOIN visible_stars vs ON vs.civilization = c.id
+        WHERE
+            vs.quantity > 0 AND vs.star = $1 AND NOT EXISTS(
+                SELECT 1 FROM known_civilizations kc WHERE kc.knower = $2 AND kc.known = c.id
+            );
+        `, [ starId, civilizationId ]);
     }
 
     public getStarCivilizationVisibility(starId: string, civilizationId: string): Observable<number> {

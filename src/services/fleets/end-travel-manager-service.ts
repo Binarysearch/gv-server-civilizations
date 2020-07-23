@@ -2,7 +2,7 @@ import { Observable, forkJoin, Subject, ReplaySubject } from "rxjs";
 import { FleetsDao } from "../../dao/fleets-dao";
 import { UserNotificationService } from "../../services/user-notification-service";
 import { StarsDao } from "../../dao/stars-dao";
-import { END_TRAVEL_NOTIFICATIONS_CHANNEL, EXPLORE_STAR_NOTIFICATIONS_CHANNEL } from "../../channels";
+import { END_TRAVEL_NOTIFICATIONS_CHANNEL, EXPLORE_STAR_NOTIFICATIONS_CHANNEL, CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL } from "../../channels";
 import { EndTravelNotificationDto } from "../../interface/dtos/end-travel-notification-dto";
 import { ExploreStarNotificationDto } from "../../interface/dtos/explore-star-notification-dto";
 import { Planet } from "../../model/planet";
@@ -12,6 +12,7 @@ import { PlanetsDao } from "../../dao/planets-dao";
 import { Injectable } from "@piros/ioc";
 import { FleetService } from "./fleets-service";
 import { clearTimeout } from "timers";
+import { CivilizationMeetNotificationDto } from "../../interface/dtos/civilization-meet-notification-dto";
 
 export interface EndTravelEvent {
 
@@ -37,7 +38,7 @@ export class EndTravelManagerService {
         private fleetsDao: FleetsDao,
         private starsDao: StarsDao,
         private planetsDao: PlanetsDao,
-        private userNotificationService: UserNotificationService
+        private userNotificationService: UserNotificationService,
     ) { }
 
     public startProcesingEvents(): void {
@@ -128,6 +129,17 @@ export class EndTravelManagerService {
                             this.endTravelEventsSubject.next(startTravelEvent);
                         });
                         
+                        // Si hay una civilización desconocida presente en el destino
+                        // Enviar notificacion de encuentro de civilización a la civilización dueña de la flota
+                        this.starsDao.getUnknownCivilizationsInStar(destinationStarId, startTravelEvent.civilizationId).subscribe(civilizations => {
+                            if (civilizations.length > 0) {
+                                const civilizationMeetNotification: CivilizationMeetNotificationDto = {
+                                    civilizations: civilizations.map(c => ({ id: c.id, name: c.name }))
+                                }
+
+                                this.userNotificationService.sendToUser(startTravelEvent.userId, CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL, civilizationMeetNotification);
+                            }
+                        });
                     });
                     
                 }, remainingTravelTime);

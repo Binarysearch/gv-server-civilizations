@@ -20,7 +20,8 @@ import {
     EXPLORE_STAR_NOTIFICATIONS_CHANNEL, 
     CREATE_COLONY_NOTIFICATIONS_CHANNEL, 
     CREATE_SHIP_NOTIFICATIONS_CHANNEL, 
-    BUILDING_ORDERS_NOTIFICATIONS_CHANNEL 
+    BUILDING_ORDERS_NOTIFICATIONS_CHANNEL,
+    CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL,
 } from './channels';
 import { PlanetsController } from './controller/planets-controller';
 import { StarsDao } from './dao/stars-dao';
@@ -141,6 +142,13 @@ CREATE TABLE building_orders(
     started_time text,
     end_time text
 );
+
+DROP TABLE IF EXISTS known_civilizations;
+CREATE TABLE known_civilizations(
+    knower text,
+    known text,
+    PRIMARY KEY(knower, known) 
+);
 `, []).subscribe(()=>{
     injector.setProviders([
         { provide: WsAuthService, useClass: LocalAuthService },
@@ -191,7 +199,8 @@ CREATE TABLE building_orders(
             EXPLORE_STAR_NOTIFICATIONS_CHANNEL,
             CREATE_COLONY_NOTIFICATIONS_CHANNEL,
             CREATE_SHIP_NOTIFICATIONS_CHANNEL,
-            BUILDING_ORDERS_NOTIFICATIONS_CHANNEL
+            BUILDING_ORDERS_NOTIFICATIONS_CHANNEL,
+            CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL,
         ]
     }, injector).start(<any>process.env.LISTEN_PORT);
 
