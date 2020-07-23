@@ -74,7 +74,7 @@ export class ShipsService {
         
                 this.setTimeout(() => {
         
-                    this.fleetsDao.getFleetByColonyId(colonyId).subscribe(fleet => {
+                    this.fleetsDao.getFleetByColonyIdAndCivilizationId(colonyId, session.civilizationId).subscribe(fleet => {
                         if (fleet) {
                             this.endCreatingShip(session, fleet, buildingOrder);
                         } else {

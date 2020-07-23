@@ -12,7 +12,7 @@ export class FleetsDao {
         
     }
 
-    public getFleetByColonyId(colonyId: string): Observable<Fleet> {
+    public getFleetByColonyIdAndCivilizationId(colonyId: string, civilizationId: string): Observable<Fleet> {
         return this.ds.getOne<Fleet>(
             `
             SELECT
@@ -29,8 +29,8 @@ export class FleetsDao {
                 JOIN planets p on p.star = f.destination AND p.star = f.origin 
                 JOIN colonies c on c.planet = p.id
             WHERE 
-                c.id = $1;
-        `, [ colonyId ]);
+                c.id = $1 and f.civilization = $2;
+        `, [ colonyId, civilizationId ]);
     }
 
     public getFleetById(fleetId: string): Observable<Fleet> {
