@@ -121,8 +121,9 @@ export class ShipsService {
         forkJoin(
             this.shipsDao.saveShips([ship]),
             this.fleetsDao.updateFleet(updatedFleet),
-            this.buildingOrdersDao.deleteBuildingOrder(buildingOrder.id)
-        ).subscribe(() => {
+            this.buildingOrdersDao.deleteBuildingOrder(buildingOrder.id),
+            this.starsDao.getViewerUserIdsInStars([fleet.destinationId])
+        ).subscribe((results) => {
 
             const createShipNotification: CreateShipNotificationDto = {
                 ship: ship,
@@ -139,7 +140,15 @@ export class ShipsService {
                 ]
             }
 
-            this.userNotificationService.sendToUser(session.user.id, CREATE_SHIP_NOTIFICATIONS_CHANNEL, createShipNotification);
+            const usersPresentInDestination = results[3];
+            if (!usersPresentInDestination.find(u => u.userId === session.user.id)) {
+                usersPresentInDestination.push({ userId: session.user.id });
+            }
+
+            usersPresentInDestination.forEach(u => {
+                this.userNotificationService.sendToUser(u.userId, CREATE_SHIP_NOTIFICATIONS_CHANNEL, createShipNotification);
+            });
+            
             this.userNotificationService.sendToUser(session.user.id, BUILDING_ORDERS_NOTIFICATIONS_CHANNEL, buildingOrdersNotification);
 
         });
