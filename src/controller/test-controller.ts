@@ -35,7 +35,7 @@ export class TestController {
                 this.ds.execute(`DELETE FROM colonies;`, []),
                 this.ds.execute(`DELETE FROM ships;`, []),
                 this.ds.execute(`DELETE FROM fleets;`, []),
-                //this.ds.execute(`DELETE FROM visible_stars;`, []),
+                this.ds.execute(`DELETE FROM visible_stars;`, []),
                 this.ds.execute(`DELETE FROM planets;`, []),
                 //this.ds.execute(`DELETE FROM known_stars;`, []),
                 //this.ds.execute(`DELETE FROM civilizations;`, []),
