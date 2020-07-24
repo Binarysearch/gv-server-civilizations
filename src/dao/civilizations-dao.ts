@@ -12,6 +12,49 @@ export class CivilizationsDao {
         
     }
 
+    public saveKnownCivilizations(knownCivilizations: { knower: string, known: string }[]): Observable<void> {
+
+        const values = knownCivilizations.map(s => {
+            return `('${s.knower}', '${s.known}')`;
+        }).join(',');
+
+        const insertQuery = `
+            INSERT INTO known_civilizations(
+                knower,
+                known
+            ) VALUES ${values};
+        `;
+        return this.ds.execute(insertQuery, []);
+    }
+
+    public getKnownCivilizationsBy(civilizationId: string): Observable<Civilization[]> {
+        return this.ds.getAll<Civilization>(
+            `
+            SELECT
+                c.id,
+                c."user",
+                c.name,
+                c.homeworld
+            FROM
+                civilizations c JOIN known_civilizations kc ON kc.known = c.id AND kc.knower = $1
+        `, [ civilizationId ]);
+    }
+
+    public getById(id: string): Observable<Civilization> {
+        return this.ds.getOne<Civilization>(
+            `
+            SELECT
+                id,
+                "user",
+                name,
+                homeworld
+            FROM
+                civilizations
+            WHERE 
+                id = $1;
+        `, [ id ]);
+    }
+
     public getByUserId(userId: string): Observable<Civilization> {
         return this.ds.getOne<Civilization>(
             `

@@ -7,12 +7,14 @@ import { StarsDao } from "../../dao/stars-dao";
 import { Fleet } from "../../model/fleet";
 import { Star } from "../../model/star";
 import { INVALID_TRAVEL_ERROR } from "../../interface/errors/errors";
-import { START_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL } from "../../channels";
+import { START_TRAVEL_NOTIFICATIONS_CHANNEL, DELETE_FLEET_NOTIFICATIONS_CHANNEL, CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL } from "../../channels";
 import { StartTravelNotificationDto } from "../../interface/dtos/start-travel-notification-dto";
 import { DeleteFleetNotificationDto } from "../../interface/dtos/delete-fleet-notification-dto";
 
 import { Injectable } from "@piros/ioc";
 import { Logger } from "@piros/tssf";
+import { CivilizationsDao } from "../../dao/civilizations-dao";
+import { CivilizationMeetNotificationDto } from "../../interface/dtos/civilization-meet-notification-dto";
 
 export interface StartTravelEvent {
 
@@ -35,6 +37,7 @@ export class FleetService {
         private fleetsDao: FleetsDao,
         private starsDao: StarsDao,
         private userNotificationService: UserNotificationService,
+        private civilizationsDao: CivilizationsDao,
         private logger: Logger
     ) { }
 
@@ -120,6 +123,33 @@ export class FleetService {
                             }
                         );
                         
+                        // Para las civilizaciones presentes en el destino que no conozcan a la civilizacion dueña de la flota
+                        // Enviar notificacion de encuentro de civilización 
+                        this.starsDao.getUnknowerCivilizationsInStar(dto.destinationStarId, session.civilizationId).subscribe(civilizations => {
+                            if (civilizations.length > 0) {
+
+                                const newKnownCivilizations = civilizations.map(c => {
+                                    return {
+                                        known: session.civilizationId,
+                                        knower: c.id
+                                    };
+                                });
+
+                                this.civilizationsDao.saveKnownCivilizations(newKnownCivilizations).subscribe(() => {
+                                    this.civilizationsDao.getById(session.civilizationId).subscribe(civ => {
+                                        const civilizationMeetNotification: CivilizationMeetNotificationDto = {
+                                            civilizations: [{ id: civ.id, name: civ.name }]
+                                        }
+    
+                                        civilizations.forEach(c => {
+                                            this.userNotificationService.sendToUser(c.user, CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL, civilizationMeetNotification);
+                                        });
+                                    });
+                                });
+
+                                
+                            }
+                        });
                     });
                     
                     obs.next(true);

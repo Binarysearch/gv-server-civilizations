@@ -16,6 +16,7 @@ import { Ship } from "../model/ship";
 import { ShipsDao } from "../dao/ships-dao";
 import { ColoniesDao } from "../dao/colonies-dao";
 import { Colony } from "../model/colony";
+import { EnemyCivilizationDto } from "../interface/dtos/enemy-civilization-dto";
 
 @Controller
 export class CivilizationsController {
@@ -29,6 +30,18 @@ export class CivilizationsController {
         private coloniesDao: ColoniesDao,
         private userNotificationService: UserNotificationService,
     ) { }
+
+    @Request('get-known-civilizations')
+    public getKnownCivilizations(session: Session): Observable<EnemyCivilizationDto[]> {
+        return this.civilizationsDao.getKnownCivilizationsBy(session.civilizationId).pipe(
+            map(civs => civs.map(civ => {
+                if (!civ) {
+                    return null;
+                }
+                return { id: civ.id, name: civ.name };
+            }))
+        );
+    }
 
     @Request('get-civilization')
     public getCivilization(session: Session): Observable<CivilizationDto> {

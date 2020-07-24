@@ -146,6 +146,22 @@ export class StarsDao {
         `, starIds);
     }
 
+    public getUnknowerCivilizationsInStar(starId: string, civilizationId: string): Observable<Civilization[]> {
+        return this.ds.getAll(`
+        SELECT
+            c.id,
+            c."user",
+            c.name,
+            c.homeworld
+        FROM
+            civilizations c JOIN visible_stars vs ON vs.civilization = c.id
+        WHERE
+            vs.quantity > 0 AND vs.star = $1 AND NOT EXISTS(
+                SELECT 1 FROM known_civilizations kc WHERE kc.known = $2 AND kc.knower = c.id
+            );
+        `, [ starId, civilizationId ]);
+    }
+
     public getUnknownCivilizationsInStar(starId: string, civilizationId: string): Observable<Civilization[]> {
         return this.ds.getAll(`
         SELECT

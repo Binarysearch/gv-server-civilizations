@@ -13,6 +13,7 @@ import { Injectable } from "@piros/ioc";
 import { FleetService } from "./fleets-service";
 import { clearTimeout } from "timers";
 import { CivilizationMeetNotificationDto } from "../../interface/dtos/civilization-meet-notification-dto";
+import { CivilizationsDao } from "../../dao/civilizations-dao";
 
 export interface EndTravelEvent {
 
@@ -39,6 +40,7 @@ export class EndTravelManagerService {
         private starsDao: StarsDao,
         private planetsDao: PlanetsDao,
         private userNotificationService: UserNotificationService,
+        private civilizationsDao: CivilizationsDao,
     ) { }
 
     public startProcesingEvents(): void {
@@ -137,7 +139,17 @@ export class EndTravelManagerService {
                                     civilizations: civilizations.map(c => ({ id: c.id, name: c.name }))
                                 }
 
-                                this.userNotificationService.sendToUser(startTravelEvent.userId, CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL, civilizationMeetNotification);
+                                const newKnownCivilizations = civilizations.map(c => {
+                                    return {
+                                        known: c.id,
+                                        knower: startTravelEvent.civilizationId
+                                    };
+                                });
+
+                                this.civilizationsDao.saveKnownCivilizations(newKnownCivilizations).subscribe(() => {
+                                    this.userNotificationService.sendToUser(startTravelEvent.userId, CIVILIZATION_MEET_NOTIFICATIONS_CHANNEL, civilizationMeetNotification);
+                                });
+
                             }
                         });
                     });
