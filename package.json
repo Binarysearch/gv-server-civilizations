@@ -22,7 +22,7 @@
   "homepage": "https://github.com/Binarysearch/gv-server-civilizations#readme",
   "devDependencies": {
     "@types/node": "~8.9.4",
-    "ts-loader": "^7.0.0"
+    "ts-loader": "^9.4.2"
   },
   "dependencies": {
     "@piros/ioc": "0.0.5",
